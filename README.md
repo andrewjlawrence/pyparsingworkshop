@@ -1,0 +1,1 @@
+This is the content for a workshop I will be giving on Pyparsing at PyCon 2018
