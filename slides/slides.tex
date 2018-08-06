@@ -1,0 +1,529 @@
+\documentclass{beamer}
+\mode<presentation>
+ \usetheme{CambridgeUS}
+%\usepackage{bussproofs}
+%\usetheme{Singapore}
+%\usecolortheme{lily}
+  %%\usetheme{Logictheme} %nothing else
+  %\setbeamertemplate{footline}[frame number]
+  
+%%\usepackage{bussproofs}
+%%\usepackage[latin1]{inputenc} 
+%%\newcommand{\mypause}{}
+%%\newcommand{\mypause}{\pause}
+
+
+%\institute[Madrid]{Swansea Railway Verification Group, Critical Software Technologies, Invensys Rail\\ \quad}
+%\title[Logic in Railway Verification]{Application of Logic to the Verification\\ of Railway Control Systems}
+%\title[Surrey Workshop]{Modelling and Analyzing the European Rail Traffic Management %System (ERTMS)}
+\title[Pythonic Parsing with Pyparsing]{Pythonic Parsing with Pyparsing}
+
+\author[Andrew Lawrence]{Andrew Lawrence}
+\date[PyCon UK, 15 September 2018]{PyCon UK 2018\\[1em]  Cardiff, 15 September 2018}
+%\institute[Swansea University]{Joint work with Andrew Lawrence, Ulrich Berger,  Phil James, Markus Roggenbach}
+
+\usepackage{tikz}
+\usepackage{graphicx}
+\usetikzlibrary{shapes}
+\usetikzlibrary{positioning}
+\usetikzlibrary{arrows}
+\usepackage{tikz-uml}
+\usepackage{verbatim}
+\newcommand{\Red}{\mathbf{Red}}
+\usepackage[nounderscore]{syntax}
+\usepackage[linguistics]{forest}
+%\usepackage{forest}
+
+\newtheorem{mydef}{Definition}
+\newtheorem{myremark}{Remark}
+\newcommand{\ednote}[1]{{\bf #1}}
+\newcommand{\fig}[1]{Fig.~\ref{fig:#1}}
+\newcommand{\Val}{{\rm Val}}
+\newcommand{\unprime}{{\rm unprime}}
+\newcommand{\Vars}{{\rm Vars}}
+\definecolor{bottomcol}{RGB}{222,222,222}
+
+
+\begin{document}
+\tikzstyle{class}=[
+    rectangle,
+    draw=black,
+    text centered,
+    anchor=north,
+    text=black,
+    text width=3cm,
+    shading=axis,
+    bottom color=bottomcol,top color=white,shading angle=45]
+
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+
+\begin{frame}
+
+\frametitle{Workshop Overview}
+
+\medskip
+This workshop aims to give an introduction to parsing using the Pyparsing library
+%\pause
+
+\medskip
+
+Overview:
+
+%\begin{itemize}
+%  \item \underline{Part I:} ERTMS -- what it is
+% \item \underline{Part II:} ERTMS -- how it works
+%  \item \underline{Part III:} Generic Modelling: ERTMS as a hybrid automaton
+%  \item \underline{Part IV:} Encoding in Real-Time Maude   
+%  \item \underline{Part V:} Verification \& simulation results
+%\end{itemize}
+
+\begin{itemize}
+  \item \underline{Part I:} Parsing Introduction
+  \item \underline{Part II:} First parser - 
+  \item \underline{Part II:} Generic Modelling: ERTMS as a hybrid automaton
+  \item \underline{Part I:} Encoding in Real-Time Maude   
+  \item \underline{Part V:} Verification \& simulation results
+\end{itemize}
+
+\bigskip
+
+\end{frame}
+
+\section{Parsing Introduction}
+
+%\begin{frame}
+%\begin{center}
+%{\Large ERTMS -- what it is}
+%\end{center}
+
+%\end{frame}
+
+
+\tikzstyle{block} = [rectangle, draw, fill=blue!20, 
+    text width=5em, text centered, rounded corners, minimum height=4em]
+\tikzstyle{line} = [draw, -latex']
+\tikzstyle{cloud} = [draw, ellipse,fill=red!20,
+    minimum height=2em]
+    
+
+\begin{frame}
+\frametitle{What is parsing?}
+\begin{center}
+\scalebox{0.8}
+{
+\begin{tikzpicture}[node distance = 2cm]
+    % Place nodes
+    \node [cloud] (init) {Source String};
+    \node [block, below of=init] (lex) {Lexical Analysis};
+    \node [cloud, below of=lex] (tokens) {Tokens};
+    \node [block, below of=tokens] (syntax) {Syntactic Analysis};
+    \node [cloud, below of=syntax] (parsetree) {Parse Tree};
+    % Draw edges
+    \path [line] (init) -- (lex);
+    \path [line] (lex) -- (tokens);
+    \path [line] (tokens) -- (syntax);
+    \path [line] (syntax) -- (parsetree);
+\end{tikzpicture}
+}
+\end{center}
+\end{frame}
+
+\begin{frame}
+\frametitle{What is a grammar?}
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Backus normal form (BNF)}
+A Backus normal form (BNF) is metasyntax notation for describing grammars.
+
+\begin{center}
+  \begin{tabular}{ | c | c | }
+    \hline
+    element type & description \\ \hline\hline
+    $<\mathrm{non terminals}>$ & non terminal symbols  \\ \hline
+    \textbf{terminals} & terminal symbols  \\ \hline
+    $|$ & choice  \\ \hline
+    ::= & replaced-by  \\
+    \hline
+  \end{tabular}
+\end{center}
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Example Grammar}
+\begin{grammar}
+<sum> ::= <sum> $\mathbf{+}$ <product> | <product>
+
+<product> ::= <product> $\mathbf{*}$ <value> | <value>
+
+<value> ::= <int> | \textit{id}
+
+<int> ::= <unsignedint> | $\mathbf{-}$<unsignedint>
+
+<unsignedint> ::= <digit> | <unsignedint><digit>
+
+<digit> ::= $\mathbf{0}$ | $\mathbf{1}$ | $\mathbf{2}$ | $\mathbf{3}$ | $\mathbf{4}$ | $\mathbf{5}$ | $\mathbf{6}$ | $\mathbf{7}$ | $\mathbf{8}$ | $\mathbf{9}$
+ \end{grammar}
+\end{frame}
+
+\begin{frame}
+\frametitle{Types of parsers}
+\begin{center}
+\begin{tikzpicture}[post/.style={->,shorten >=1pt,>=stealth',semithick}] 
+\umlsimpleclass{Parser} 
+\umlsimpleclass[x=-2, y=-3]{Top down} 
+\umlsimpleclass[x=2, y=-3]{Bottom up}
+\umlVHVinherit{Top down}{Parser} 
+\umlVHVinherit{Bottom up}{Parser} 
+\end{tikzpicture}
+\end{center}
+\end{frame}
+
+
+
+\tikzset{
+    invisible/.style={opacity=0,text opacity=0},
+    visible on/.style={alt=#1{}{invisible}},
+    alt/.code args={<#1>#2#3}{%
+      \alt<#1>{\pgfkeysalso{#2}}{\pgfkeysalso{#3}} % \pgfkeysalso doesn't change the path
+    },
+}
+\forestset{
+  visible on/.style={
+    for current and ancestors={
+      /tikz/visible on={#1},
+      edge={/tikz/visible on={#1}}}}}
+
+\begin{frame}
+\frametitle{Example Parse Tree}
+\begin{center}
+\scalebox{0.8} {
+\begin{forest}
+  for tree={
+    if n children=0{
+      font=\itshape,
+      tier=terminal,
+      l sep=20pt,
+      minimum width=1.8cm
+    }{},
+  }
+[sum
+  [sum
+    [product
+      [product
+        [value
+          [id
+            [$x$]
+          ]
+        ]
+      ]
+      [$*$]
+      [value
+        [int 
+          [$2$]
+        ]
+      ]
+    ]
+  ]
+  [$+$]
+  [product 
+    [value
+      [int
+        [$1$]
+      ]
+    ]
+  ]
+]
+\end{forest}
+}
+\end{center}
+\end{frame}
+
+\begin{frame}
+\frametitle{Bottom Up (LR) Parse}
+\begin{center}
+\scalebox{0.8} {
+\begin{forest}
+  for tree={
+    if n children=0{
+      font=\itshape,
+      tier=terminal,
+      l sep=20pt,
+      minimum width=1.8cm
+    }{},
+  }
+[sum (13), , visible on=<13->
+  [sum (8), , visible on=<8->
+    [product (7), visible on=<7->
+      [product (3), visible on=<3->
+        [value (2), visible on=<2->
+          [id (1), visible on=<1->
+            [$x$, visible on=<1->]
+          ]
+        ]
+      ]
+      [$\overset{(4)}{*}$, visible on=<4->]
+      [value (6), visible on=<6->
+        [int (5), visible on=<5->
+          [$2$, visible on=<5->]
+        ]
+      ]
+    ]
+  ]
+  [$\overset{(9)}{+}$, , visible on=<9->]
+  [product (12) , visible on=<12->
+    [value (11), visible on=<11->
+      [int (10),  visible on=<10->
+        [$1$,  visible on=<10->]
+      ]
+    ]
+  ]
+]
+\end{forest}
+}
+\end{center}
+\end{frame}
+\tikzset{
+    invisible/.style={opacity=0,text opacity=0},
+    visible on/.style={alt=#1{}{invisible}},
+    alt/.code args={<#1>#2#3}{%
+      \alt<#1>{\pgfkeysalso{#2}}{\pgfkeysalso{#3}} % \pgfkeysalso doesn't change the path
+    },
+}
+\forestset{
+  visible on/.style={
+    for tree={
+      /tikz/visible on={#1},
+      edge+={/tikz/visible on={#1}}}}}
+
+
+\begin{frame}
+\frametitle{Top Down Parse}
+\begin{center}
+\scalebox{0.8} {
+\begin{forest}
+  for tree={
+    if n children=0{
+      font=\itshape,
+      tier=terminal,
+      l sep=20pt,
+      minimum width=1.8cm
+    }{},
+  }
+[sum (1), visible on=<1->
+  [sum (2), visible on=<2->
+    [product (3), visible on=<3->
+      [product (4), visible on=<4->
+        [value (5), visible on=<5->
+          [id (6), visible on=<6->
+            [$x$, visible on=<6->]
+          ]
+        ]
+      ]
+      [$\overset{(7)}{*}$, visible on=<7->]
+      [value (8), visible on=<8->
+        [int (9), visible on=<9->
+          [$2$, visible on=<9->]
+        ]
+      ]
+    ]
+  ]
+  [$\overset{(10)}{+}$, visible on=<10->]
+  [product (11), visible on=<11->
+    [value (12), visible on=<12->
+      [int (13), visible on=<13->
+        [$1$, visible on=<13->]
+      ]
+    ]
+  ]
+]
+\end{forest}
+}
+\end{center}
+\end{frame}
+
+
+\begin{frame}
+\frametitle{More detailed description of recursive decent parsing}
+\end{frame}
+
+\begin{frame}
+\frametitle{Why are are regular expressions bad you ask?}
+\end{frame}
+
+\begin{frame}
+\frametitle{Pyparsing overview}
+\end{frame}
+
+\begin{frame}
+\frametitle{Pyparsing Basics}
+\end{frame}
+
+\begin{frame}
+\frametitle{Structuring a Simple Application}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Words and literals}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Combinators}
+\end{frame}
+
+\begin{frame}
+\frametitle{Example 1: Floating point number}
+\end{frame}
+
+\begin{frame}
+\frametitle{Exercise 1: Date time format string}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Intermediate Pyparsing}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Structuring parser results using Group, Combine and setName}
+\end{frame}
+
+\begin{frame}
+\frametitle{Adding extra behaviour with setParseAction}
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Forward declaring parsers with Forward}
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Lookahead with NotAny and FollowedBy}
+\end{frame}
+
+\begin{frame}
+\frametitle{Parsing dictionaries with Dict}
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Forward declaring parsers with Forward}
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Exercise 2: JSON Parser}
+\end{frame}
+
+\begin{frame}
+\frametitle{Advanced Pyparsing}
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Debugging parsers}
+\end{frame}
+
+\begin{frame}
+\frametitle{Whitespace Management}
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Packrat Parsing}
+\end{frame}
+
+
+
+\begin{frame}
+\frametitle{Summary}
+\end{frame}
+
+
+\end{document}
+\begin{frame}
+\frametitle{References}    
+ 
+%Specification Implementation Verification Method:
+
+  \begin{thebibliography}{10}    
+  \beamertemplatearticlebibitems
+  \bibitem{} James, P., Lawrence, A.,  Moller, F., Roggenbach, M., Seisenberger, M. and Setzer, A.Chadwick, S. ,P. Kanso, K., :
+\newblock{\em  Verification of solid state interlocking programs.}
+\newblock In SEFM'13, LNCS 8368, Springer 2014.
+\end{thebibliography} 
+
+\bigskip
+%Extraction of SAT and Resolution algorithm:
+
+\begin{thebibliography}{10}    
+  \beamertemplatearticlebibitems
+  \bibitem{}
+    Berger, U.,  Lawrence, A., Nordvall Forsberg, F. , Seisenberger, M. 
+    \newblock {\em Extraction of Verified Decision Procedures}. LMCS, to appear. 
+
+\bigskip
+
+\bibitem{} Lawrence, A, Berger, U. , James, P., Roggenbach, M., Seisenberger, M.
+\newblock {\em Modelling and Analysing the European Rail Traffic Control System}
+\newblock FTSCS, 2014.
+
+\end{thebibliography}
+\end{frame}
+
+
+
+\end{document}
+
+\begin{frame}
+
+\frametitle{European Rail Traffic Management System (ERTMS) II}
+
+Formal methods and ERTMS:
+\begin{itemize}
+
+\item
+EuRailCheck (2009): \\ suggested methodology and tools for
+formalization and validation of the standard.
+
+\item
+Open ETCS Project (ongoing): \\ works towards an integrated framework for
+modelling, development, implementation and testing of the standard.
+
+\end{itemize}
+
+Open research questions include:
+\begin{enumerate}
+
+\item
+How can safety be verified? 
+
+\item
+How can capacity be measured and improved?
+
+\item
+How can reliability be measured and estimated?
+
+\end{enumerate}
+
+Here: 1 and, partially, 2.
+
+\end{frame}
+
+\section{Modelling and Analyzing ERTMS}
+
+%\begin{frame}
+%\begin{center}
+%{\Large ERTMS -- how it works}
+%\end{center}
+%\end{frame}
