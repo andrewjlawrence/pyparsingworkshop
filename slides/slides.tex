@@ -83,10 +83,7 @@ Overview:
 
 \begin{itemize}
   \item \underline{Part I:} Parsing Introduction
-  \item \underline{Part II:} First parser - 
-  \item \underline{Part II:} Generic Modelling: ERTMS as a hybrid automaton
-  \item \underline{Part I:} Encoding in Real-Time Maude   
-  \item \underline{Part V:} Verification \& simulation results
+  \item \underline{Part II:} Pyparsing Basics
 \end{itemize}
 
 \bigskip
@@ -111,7 +108,7 @@ Overview:
     
 
 \begin{frame}
-\frametitle{What is parsing?}
+\frametitle{What is a parser?}
 \begin{center}
 \scalebox{0.8}
 {
@@ -148,7 +145,8 @@ A Backus normal form (BNF) is metasyntax notation for describing grammars.
     $<\mathrm{non terminals}>$ & non terminal symbols  \\ \hline
     \textbf{terminals} & terminal symbols  \\ \hline
     $|$ & choice  \\ \hline
-    ::= & replaced-by  \\
+    ::= & replaced-by  \\ \hline
+    * & repetition \\
     \hline
   \end{tabular}
 \end{center}
@@ -156,7 +154,7 @@ A Backus normal form (BNF) is metasyntax notation for describing grammars.
 \end{frame}
 
 \begin{frame}[fragile]
-\frametitle{Example Grammar}
+\frametitle{Arithmetic Example Grammar}
 \begin{grammar}
 <sum> ::= <sum> $\mathbf{+}$ <product> | <product>
 
@@ -359,29 +357,306 @@ A Backus normal form (BNF) is metasyntax notation for describing grammars.
 
 \begin{frame}
 \frametitle{Pyparsing overview}
+Pyparsing is a recusive decent parser framework for the Python programming language. \\
+\bigskip
+More powerful than regular expressions.\\
+\bigskip
+Lets us define parsers using a BNF style notation
 \end{frame}
 
+
 \begin{frame}
-\frametitle{Pyparsing Basics}
+\frametitle{Arthmetic Example in Pyparsing}
+Show arthmetic example
 \end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Getting started}
+Install the Pyparsing module if necessary
+\begin{verbatim}
+pip install pyparsing
+\end{verbatim}
+\bigskip
+Loading the module inside a Python script can be done like so
+\begin{verbatim}
+import pyparsing as pp
+\end{verbatim}
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Parser Element}
+
+The basic building block from which all other parsers are built
+\begin{center}
+\begin{tikzpicture}[post/.style={->,shorten >=1pt,>=stealth',semithick}] 
+\umlsimpleclass{object} 
+\umlclass[y=-3]{ParserElement}{}{parseString(self, instring) : ParseResults \\
+	runTests(self, tests)
+}
+\umlVHVinherit{ParserElement}{object} 
+\end{tikzpicture}
+%     	parseString(self, instring) : ParseResults
+%}
+%        setParseAction(self, *fns, **kwargs)  \\
+ %       runTests(self, tests, ...) }
+\end{center}
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+\frametitle{parseString}
+Applying the parser to a string is done using the \texttt{parseString} method.
+
+\begin{verbatim}
+sum.parseString("4 + 2 * 4")
+
+=>
+
+['4', '+', '2', '*', '4']
+\end{verbatim}
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{runTests}
+It is possible to run some simple tests using the \texttt{runTests} method.
+
+\begin{verbatim}
+tests = """
+    1+2
+    1+3+7
+    -1*43
+    -1+16*4
+    """
+sum.runTests(tests)
+\end{verbatim}
+The results will either show that the parse suceeded or where it failed. \\
+\medskip
+It is always advisable to write unit tests for real application development.
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Pyparsing Basics: Defining Tokens}
+\begin{center}
+\begin{tikzpicture}[post/.style={->,shorten >=1pt,>=stealth',semithick}] 
+\umlsimpleclass{object} 
+\umlsimpleclass[y=-2]{ParserElement}
+\umlsimpleclass[y=-4]{Token}
+\umlsimpleclass[x=-2, y=-6 ]{Literal}
+\umlsimpleclass[x=2, y=-6 ]{Word}
+\umlVHVinherit{ParserElement}{object} 
+\umlVHVinherit{Token}{ParserElement} 
+\umlVHVinherit{Literal}{Token} 
+\umlVHVinherit{Word}{Token} 
+
+\end{tikzpicture}
+\end{center}
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+\frametitle{Pyparsing Basics: Literal}
+\texttt{Literal} can be used to exactly match a specified string
+\begin{verbatim}
+   Literal('blah').parseString('blah')  
+        # -> ['blah']
+   Literal('blah').parseString('blahfooblah')  
+        # -> ['blah']
+   Literal('blah').parseString('bla')  
+        # -> Exception: Expected "blah"
+\end{verbatim}
+There is also a \texttt{CaselessLiteral} token class for case-insensitive matching.
+\end{frame}
+
+\begin{frame}[fragile]
+ \frametitle{Pyparsing Basics: Word}
+Token to match a word based on a provided character set. \\ 
+\bigskip
+The following grammar 
+\begin{grammar}
+<abstring> ::= ($\mathbf{a}$ | $\mathbf{b}$ | $\mathbf{A}$ | $\mathbf{B}$)*
+ \end{grammar} 
+\bigskip
+is equivalent to this Python code
+\begin{verbatim}
+abstring = pp.Word("abAB")
+ \end{verbatim}
+
+\end{frame}
+
+
+\begin{frame}[fragile]
+ \frametitle{Pyparsing Basics: Word}
+There are several helper strings for defining words \\ 
+\begin{center}
+  \begin{tabular}{ | c | c | }
+    \hline
+    helper string & description \\ \hline\hline
+    alphas & alphabetic characters  \\ \hline
+    nums & numbers \\ \hline
+    alphanums & alphabetic characters + numbers  \\ \hline
+    hexnums & hexidecimal numbers  \\ \hline
+    alphas8bit & alphabetic characters in ASCII range 128-255 \\ \hline
+    punc8bit & non-alphabetic characters in ASCII range 128-255 \\ \hline
+    printables & any non-whitespace character \\
+  \hline
+  \end{tabular}
+\end{center}
+
+\end{frame}
+
+\begin{frame}[fragile]
+ \frametitle{Pyparsing Basics: Word}
+In our arthmetic example we define \texttt{unsignedint} using the \texttt{Word} Token.
+\begin{verbatim}
+unsignedint = pp.Word(pp.nums)
+
+unsignedint.parseString("123")
+        # => ['123']	
+
+unsignedint.parseString("abc")
+# => pyparsing.ParseException: Expected W:(0123...)	
+\end{verbatim}
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Pyparsing Basics: ParseExpressions}
+
+\begin{center}
+\begin{tikzpicture}[post/.style={->,shorten >=1pt,>=stealth',semithick}] 
+\umlsimpleclass{object} 
+\umlsimpleclass[y=-2]{ParserElement}
+\umlsimpleclass[y=-4]{ParseExpression}
+\umlsimpleclass[x=-4, y=-6 ]{And}
+\umlsimpleclass[x=-1.5, y=-6 ]{Each}
+\umlsimpleclass[x=1.5, y=-6 ]{MatchFirst}
+\umlsimpleclass[x=4, y=-6 ]{Or}
+\umlVHVinherit{ParserElement}{object} 
+\umlVHVinherit{ParseExpression}{ParserElement} 
+\umlVHVinherit{And}{ParseExpression} 
+\umlVHVinherit{Each}{ParseExpression} 
+\umlVHVinherit{MatchFirst}{ParseExpression} 
+\umlVHVinherit{Or}{ParseExpression} 
+
+\end{tikzpicture}
+\end{center}
+
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Pyparsing Basics: And}
+The \texttt{And} parse expression, written infix as \texttt{+}, requires that the given ParseExpressions are found in order.
+
+\begin{verbatim} 
+pp.Literal("-") + unsignedint
+\end{verbatim}
+
+or as prefix notation
+\begin{verbatim} 
+pp.And([pp.Literal("-"), unsignedint])
+\end{verbatim}
+
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+\frametitle{Pyparsing Basics: Each}
+The \texttt{Each} parse expression, written infix as \texttt{\&}, requires that the given ParseExpressions are matched, but in \textbf{any} order.
+\begin{verbatim}
+animal_type = pp.oneOf("CAT DOG HORSE FISH RAT")
+type_attr = "type:" + animal_type("type")
+
+name = pp.Word(pp.alphas)
+name_attr = "name:" + name("pet name")
+
+pet_spec = name_attr & type_attr
+\end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Pyparsing Basics: Each}
+\begin{verbatim}
+pet_spec.runTests('''
+    name: Brian type: DOG
+    type: CAT name: Tom
+    '''
+        =>	
+name: Brian type: DOG
+['name:', 'Brian', 'type:', 'DOG']
+- pet name: 'Brian'
+- type: 'DOG'
+
+type: CAT name: Tom
+['type:', 'CAT', 'name:', 'Tom']
+- pet name: 'Tom'
+- type: 'CAT'
+\end{verbatim}
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Pyparsing Basics: MatchFirst}
+The \texttt{MatchFirst} parse expression, written infix as \texttt{|}, requires that one of the ParseExpressions are matched with priority given from left to right.
+\begin{verbatim}
+unsignedint = pp.Word(pp.nums)
+integer = 
+    pp.Combine(
+      pp.Literal("-") + unsignedint
+    ).setResultsName("integer") | 
+        unsignedint("unsigned integer")
+\end{verbatim} 
+\end{frame}
+
+
+
+
+\begin{frame}[fragile]
+\frametitle{Pyparsing Basics: MatchFirst}
+\begin{verbatim}
+integer.runTests("""
+        1
+        -1
+""")
+
+1
+['1']
+- unsigned integer: '1'
+
+-1
+['-1']
+- integer: '-1'
+\end{verbatim} 
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Pyparsing Basics: Or}
+The \texttt{Or} parse expression, written infix as \texttt{\^}, requires that at least one of the ParseExpressions are matched with priority given to the longest.
+
+\begin{verbatim}
+    number = Word(nums) ^ Combine(Word(nums) + '.' + Word(nums))
+    number.searchString("123 3.1416 789"))
+        =>
+    [['123'], ['3.1416'], ['789']]
+\end{verbatim}
+\end{frame}
+
+
+\end{document}
 
 \begin{frame}
 \frametitle{Structuring a Simple Application}
 
 \end{frame}
 
-\begin{frame}
-\frametitle{Words and literals}
 
-\end{frame}
-
-\begin{frame}
-\frametitle{Combinators}
-\end{frame}
-
-\begin{frame}
-\frametitle{Example 1: Floating point number}
-\end{frame}
 
 \begin{frame}
 \frametitle{Exercise 1: Date time format string}
@@ -527,3 +802,5 @@ Here: 1 and, partially, 2.
 %{\Large ERTMS -- how it works}
 %\end{center}
 %\end{frame}
+
+\end{document}
