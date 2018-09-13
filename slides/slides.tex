@@ -19,7 +19,7 @@
 \title[Pythonic Parsing with Pyparsing]{Pythonic Parsing with Pyparsing}
 
 \author[Andrew Lawrence]{Andrew Lawrence}
-\date[PyCon UK, 15 September 2018]{PyCon UK 2018\\[1em]  Cardiff, 15 September 2018}
+\date[PyCon UK, 17 September 2018]{PyCon UK 2018\\[1em]  Cardiff, 17 September 2018}
 %\institute[Swansea University]{Joint work with Andrew Lawrence, Ulrich Berger,  Phil James, Markus Roggenbach}
 
 \usepackage{tikz}
@@ -27,6 +27,7 @@
 \usetikzlibrary{shapes}
 \usetikzlibrary{positioning}
 \usetikzlibrary{arrows}
+\usetikzlibrary{automata}
 \usepackage{tikz-uml}
 \usepackage{verbatim}
 \newcommand{\Red}{\mathbf{Red}}
@@ -61,6 +62,7 @@
 \end{frame}
 
 
+
 \begin{frame}
 
 \frametitle{Workshop Overview}
@@ -73,21 +75,29 @@ This workshop aims to give an introduction to parsing using the Pyparsing librar
 
 Overview:
 
-%\begin{itemize}
-%  \item \underline{Part I:} ERTMS -- what it is
-% \item \underline{Part II:} ERTMS -- how it works
-%  \item \underline{Part III:} Generic Modelling: ERTMS as a hybrid automaton
-%  \item \underline{Part IV:} Encoding in Real-Time Maude   
-%  \item \underline{Part V:} Verification \& simulation results
-%\end{itemize}
-
 \begin{itemize}
   \item \underline{Part I:} Parsing Introduction
   \item \underline{Part II:} Pyparsing Basics
+  \item \underline{Part III:} Exercise 1: Dice Rolling
+  \item \underline{Part IV:} Intermediate Pyparsing
+  \item \underline{Part V:} Exercise 2: JSON Parser
+  \item \underline{Part VI:} Advanced Pyparsing
 \end{itemize}
 
-\bigskip
+\end{frame}
 
+\begin{frame}
+
+\frametitle{Prerequisites}
+I am assuming that you have \textbf{Python 3} and \textbf{git} installed. You can get the workshop examples from Github:
+\begin{center}
+\textit{git clone https://github.com/andrewjlawrence/pyparsingworkshop.git}
+\end{center}
+\bigskip
+You also need to install Pyparsing. 
+\begin{center}
+\textit{pip install pyparsing}
+\end{center}
 \end{frame}
 
 \section{Parsing Introduction}
@@ -105,6 +115,28 @@ Overview:
 \tikzstyle{line} = [draw, -latex']
 \tikzstyle{cloud} = [draw, ellipse,fill=red!20,
     minimum height=2em]
+
+
+\begin{frame}
+\frametitle{Why do we need parsers?}
+The world is full of textual data in human readable formats. \\
+\bigskip
+The problem here is getting computers to understand this data.
+\end{frame}
+
+\begin{frame}
+\frametitle{What is a parser?}
+Typically parsing involves 3 stages:
+\medskip
+\begin{description}
+\item[Lexical Analysis] Break the string down into \textbf{tokens}
+
+\item[Syntactic Analysis] Construct a \textbf{syntax tree} based on some grammar
+
+\item[Semantic Interpretation] Do something based on the syntax tree
+\end{description}
+
+\end{frame}
     
 
 \begin{frame}
@@ -118,7 +150,7 @@ Overview:
     \node [block, below of=init] (lex) {Lexical Analysis};
     \node [cloud, below of=lex] (tokens) {Tokens};
     \node [block, below of=tokens] (syntax) {Syntactic Analysis};
-    \node [cloud, below of=syntax] (parsetree) {Parse Tree};
+    \node [cloud, below of=syntax] (parsetree) {Syntax Tree};
     % Draw edges
     \path [line] (init) -- (lex);
     \path [line] (lex) -- (tokens);
@@ -130,13 +162,15 @@ Overview:
 \end{frame}
 
 \begin{frame}
-\frametitle{What is a grammar?}
+\frametitle{What is a Grammar?}
+
+A \textbf{grammar} is a set of rules that describes the structure of text.
 \end{frame}
 
 
 \begin{frame}[fragile]
-\frametitle{Backus normal form (BNF)}
-A Backus normal form (BNF) is metasyntax notation for describing grammars.
+\frametitle{Backus-Naur Form (BNF)}
+A Backus-Naur form (BNF) is metasyntax notation for describing grammars.
 
 \begin{center}
   \begin{tabular}{ | c | c | }
@@ -170,8 +204,32 @@ A Backus normal form (BNF) is metasyntax notation for describing grammars.
  \end{grammar}
 \end{frame}
 
+
 \begin{frame}
-\frametitle{Types of parsers}
+\frametitle{Regular Expressions}
+A \textit{regular expression} is a syntactic notation for defining textual patterns. \\
+\bigskip
+Example: \texttt{a|b*} denotes ${\{ \epsilon, "a", "b", "bb", "bbb", \ldots \}}$ \\
+\bigskip
+I won't go into further detail about how these work but beaware that they exist.
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{BNF Extensions}
+There are a number of extensions to BNF. One common approach, as seen in extended Backus-Naur form is to use operations from regular expressions such as:
+
+\begin{description}
+\item[*]  - Match the preceeding element zero or more times. Often called the \underline{\textbf{Kleene Star}}.
+\item[+]  - Match the preceeding element one or more times
+\end{description}
+
+\end{frame}
+
+
+
+\begin{frame}
+\frametitle{Types of Parsers}
 \begin{center}
 \begin{tikzpicture}[post/.style={->,shorten >=1pt,>=stealth',semithick}] 
 \umlsimpleclass{Parser} 
@@ -347,17 +405,60 @@ A Backus normal form (BNF) is metasyntax notation for describing grammars.
 \end{frame}
 
 
-\begin{frame}
-\frametitle{More detailed description of recursive decent parsing}
+%\begin{frame}
+%\frametitle{More detailed description of recursive decent parsing}
+%\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Why Are Regular Expressions Bad You Ask?}
+Below is part of a regex for validating RFC822 email addresses.
+\begin{verbatim}
+(?:(?:\\r\\n)?[ \\t])*(?:(?:(?:[^()<>@,;:\\\\".\\[\\]
+ \\000-\\031]+(?:(?:(?:\\r\\n)?[ \\t])+|\\Z|
+(?=[\\["()<>@,;:\\\\".\\[\\]]))|"(?:[^\\\\"\r\\\\]|\\\\.|
+(?:(?:\\r\\n)?[ \\t]))*"(?:(?:\\r\\n)?[ \\t])*)
+(?:\\.(?:(?:\\r\\n)?[ \\t])
+*(?:[^()<>@,;:\\\\".\\[\\] \\000-\\031]+
+(?:(?:(?:\\r\\n)?[ \\t])+|\\Z|
+(?=[\\["()<>@,;:\\\\".\\[\\]]))|"
+(?:[^\\"\r\\\\]|\\\\.|(?:(?:\\r\\n)?[ \t]))
+*"(?:(?:\\r\\n)?[ \\t])*))*@(?:(?:\\r\\n)?[ \\t])*
+\end{verbatim}
+The full regex is 6.2KB in size.
+
 \end{frame}
 
-\begin{frame}
-\frametitle{Why are are regular expressions bad you ask?}
+
+\begin{frame}[fragile]
+\frametitle{Why Are Regular Expressions Bad You Ask?}
+Why are regular expressions bad?
+
+\begin{enumerate}
+\pause
+\item Difficult to read
+\pause
+\item Hard to maintain - Write only
+\pause
+\item Different standards exist
+\end{enumerate}
+
 \end{frame}
 
+\section{Pyparsing Basics}
+
 \begin{frame}
-\frametitle{Pyparsing overview}
-Pyparsing is a recusive decent parser framework for the Python programming language. \\
+\frametitle{Pyparsing Overview}
+Pyparsing is a recursive decent parser framework for the Python programming language. \\
+\medskip
+Created by Paul McGuire in 2003.
+\medskip
+Follows the parser combinator approach to parsing. You build your parser by combining other parsers.
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Pyparsing Advantages}
+Pyparsing is a recursive decent parser framework for the Python programming language. \\
 \bigskip
 More powerful than regular expressions.\\
 \bigskip
@@ -366,18 +467,25 @@ Lets us define parsers using a BNF style notation
 
 
 \begin{frame}
+\frametitle{Pyparsing is Pythonic}
+Pyparsing is pythonic. Consider the below points from "The Zen of Python": \\
+\bigskip
+\begin{itemize}
+\item Beautiful is better than ugly.
+\item Explicit is better than implicit.
+\item Simple is better than complex.
+\item Readability counts.
+\end{itemize}
+\end{frame}
+
+\begin{frame}
 \frametitle{Arthmetic Example in Pyparsing}
 Show arthmetic example
 \end{frame}
 
 
 \begin{frame}[fragile]
-\frametitle{Getting started}
-Install the Pyparsing module if necessary
-\begin{verbatim}
-pip install pyparsing
-\end{verbatim}
-\bigskip
+\frametitle{Getting Started}
 Loading the module inside a Python script can be done like so
 \begin{verbatim}
 import pyparsing as pp
@@ -387,7 +495,6 @@ import pyparsing as pp
 
 \begin{frame}
 \frametitle{Parser Element}
-
 The basic building block from which all other parsers are built
 \begin{center}
 \begin{tikzpicture}[post/.style={->,shorten >=1pt,>=stealth',semithick}] 
@@ -417,6 +524,7 @@ sum.parseString("4 + 2 * 4")
 
 ['4', '+', '2', '*', '4']
 \end{verbatim}
+It should be noted that whitespace is skipped by default.
 \end{frame}
 
 
@@ -433,7 +541,7 @@ tests = """
     """
 sum.runTests(tests)
 \end{verbatim}
-The results will either show that the parse suceeded or where it failed. \\
+The results will either show that the parse succeeded or where it failed. \\
 \medskip
 It is always advisable to write unit tests for real application development.
 \end{frame}
@@ -523,6 +631,39 @@ unsignedint.parseString("abc")
 # => pyparsing.ParseException: Expected W:(0123...)	
 \end{verbatim}
 \end{frame}
+
+\begin{frame}
+\frametitle{Pyparsing Basics: Word Length}
+Word has some helpful parameters for lengths.
+
+
+
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Pyparsing Basics: Result Names}
+It is possible to label results using a name
+\begin{verbatim}
+unsignedint = \
+ pp.Word(pp.nums).setResultsName('Unsigned Integer')
+
+unsignedint.runTests("""
+        1
+""") 
+  =>
+1
+['1']
+- Unsigned Integer: '1'
+\end{verbatim}
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Pyparsing Basics: Keyword}
+Todo describe keyword
+\end{frame}
+
 
 
 \begin{frame}
@@ -641,45 +782,512 @@ integer.runTests("""
 The \texttt{Or} parse expression, written infix as \texttt{\^}, requires that at least one of the ParseExpressions are matched with priority given to the longest.
 
 \begin{verbatim}
-    number = Word(nums) ^ Combine(Word(nums) + '.' + Word(nums))
-    number.searchString("123 3.1416 789"))
-        =>
+number = Word(nums) ^ Combine(Word(nums) \
+         + '.' + Word(nums))
+number.searchString("123 3.1416 789"))
+         =>
     [['123'], ['3.1416'], ['789']]
 \end{verbatim}
 \end{frame}
 
+\begin{frame}[fragile]
+\frametitle{Pyparsing Basics: Combine}
+The \texttt{Combine} parse expression combines parsed tokens into a single string.
+
+\begin{verbatim}
+number = Word(nums) ^ Combine(Word(nums) + '.' + Word(nums))
+number.searchString("123 3.1416 789"))
+    =>
+[['123'], ['3.1416'], ['789']]
+\end{verbatim}
+Combine is actually enhancing the parser rather than chaning the grammar to be parsed.
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Pyparsing Basics: Parser Element Enhancements}
+ParseElementEnhance provides an interface for parser enhancements which combine or post process tokens.
+\begin{center}
+\begin{tikzpicture}[post/.style={->,shorten >=1pt,>=stealth',semithick}] 
+\umlsimpleclass[]{ParserElement}
+\umlsimpleclass[y=-2]{ParseElementEnhance}
+%\umlVHVinherit{ParserElement}{object} 
+\umlVHVinherit{ParseElementEnhance}{ParserElement} 
+\end{tikzpicture}
+\end{center}
+
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Pyparsing Basics: Forward}
+The first parser enhancement we will look at is \texttt{Forward}
+\begin{center}
+\begin{tikzpicture}[post/.style={->,shorten >=1pt,>=stealth',semithick}] 
+\umlsimpleclass[]{ParseElementEnhance}
+\umlsimpleclass[y=-2]{Forward}
+%\umlVHVinherit{ParserElement}{object} 
+\umlVHVinherit{Forward}{ParseElementEnhance} 
+\end{tikzpicture}
+\end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Pyparsing Basics: Forward}
+How do we handle recursion in Pyparsing? We cannot directly define \texttt{sum} like this:
+\medskip
+\begin{grammar}
+<sum> ::= <sum> $\mathbf{+}$ <product> | <product>
+\end{grammar}
+\medskip
+Instead we must forward declare sum and use an auxilary parser:
+\begin{verbatim}
+sum = pp.Forward()
+sum_list = product + pp.Literal("+") + sum
+sum << (sum_list | product)
+\end{verbatim}
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Pyparsing Basics: Token Converters}
+Token converters are used to convert parsed results
+\begin{center}
+\begin{tikzpicture}[post/.style={->,shorten >=1pt,>=stealth',semithick}] 
+\umlsimpleclass{ParseElementEnhance} 
+\umlsimpleclass[y=-2]{TokenConverter}
+\umlsimpleclass[x=-4,y=-4]{Combine}
+\umlsimpleclass[x=-1.5, y=-4]{Dict}
+\umlsimpleclass[x=1.5,y=-4]{Group}
+\umlsimpleclass[x=4, y=-4]{Suppress}
+
+%\umlVHVinherit{ParserElement}{object} 
+\umlVHVinherit{TokenConverter}{ParseElementEnhance} 
+\umlVHVinherit{Combine}{TokenConverter} 
+\umlVHVinherit{Dict}{TokenConverter} 
+\umlVHVinherit{Group}{TokenConverter} 
+\umlVHVinherit{Suppress}{TokenConverter} 
+
+\end{tikzpicture}
+\end{center}
+
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Exercise 1: Dice Rolling}
+For our first exercise we will implement a dice roll parser. \\
+\medskip
+For example, the roll \textbf{2d6} can be interpretted as rolling two six sided dice. \\
+\bigskip
+Task 1) Complete the grammar 
+\begin{grammar}
+<diceroll> ::= ...
+\end{grammar}
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Exercise 1: Dice Rolling}
+For our first exercise we will implement a dice roll parser. \\
+\medskip
+For example, the roll \textbf{2d6} can be interpretted as rolling two six sided dice. \\
+\bigskip
+\textbf{\underline{Task 1)}} Complete the grammar 
+\medskip
+\begin{grammar}
+<diceroll> ::= ...
+\end{grammar}
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Exercise 1: Dice Rolling}
+\begin{center}
+Discussion...
+\end{center}
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Exercise 1: Dice Rolling}
+One possible answer
+\bigskip
+\begin{grammar}
+<digit> ::= $\mathbf{0}$ | $\mathbf{1}$ | $\mathbf{2}$ | $\mathbf{3}$ | $\mathbf{4}$ | $\mathbf{5}$ | $\mathbf{6}$ | $\mathbf{7}$ | $\mathbf{8}$ | $\mathbf{9}$
+
+<numsides> ::= <digit>
+
+<numdice> ::= <digit>
+
+<diceroll> ::= <numdice>d<numsides>
+\end{grammar}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Exercise 1: Dice Rolling}
+\textbf{\underline{Task 2)}} Now implement the parser in Python. You can find a template file with some tests in the exercises folder
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Pyparsing Basics: Suppress}
+Suppress is a TokenConverter that throws away the parsed results
+\begin{center}
+\begin{tikzpicture}[post/.style={->,shorten >=1pt,>=stealth',semithick}] 
+\umlsimpleclass{ParseElementEnhance} 
+\umlsimpleclass[y=-2]{TokenConverter}
+\umlsimpleclass[y=-4]{Suppress}
+
+\umlVHVinherit{TokenConverter}{ParseElementEnhance} 
+\umlVHVinherit{Suppress}{TokenConverter} 
+\end{tikzpicture}
+\end{center}
+
+\end{frame}
+
+\section{Pyparsing Intermediate}
+
+\begin{frame}[fragile]
+\frametitle{Pyparsing Basics: Suppress}
+There are two ways to apply Suppress:
+\begin{verbatim}
+animal_type = pp.oneOf("CAT DOG HORSE FISH RAT")
+type_attr = pp.Suppress("type:") + animal_type("type")
+
+name = pp.Word(pp.alphas)
+name_attr = pp.Literal("name:").suppress() + name("pet name")
+
+pet_spec = name_attr & type_attr
+\end{verbatim}
+\end{frame}
+
+\begin{frame}
+TODO add more about token converters.
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Exercise 1: Dice Rolling}
+\textbf{\underline{Task 3)}} Work out which tokens in your Dice Rolling Parser should be suppressed and remove them from the results. \\
+\end{frame}
+
+
+
+
+
+\begin{frame}
+\frametitle{Adding Behavior to Parsers}
+Parser Element lets us add additional parsing behavior with the \texttt{setParseAction} method.
+\medskip
+
+See example \textbf{sum-version2.py}.
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Exercise 1: Dice Rolling Task 4}
+\textbf{\underline{Task 4}} Add a parse action to your dice roll parser that does a dice roll. 
+\medskip
+You may need to import the \texttt{random} module to do this.
+\end{frame}
+
+\begin{frame}
+\frametitle{Exercise 2: JSON Parser}
+For our second exercise we will write a parser for a simplified JSON (JavaScript Object Notation). \\
+\medskip
+This is a commonly used format for exchanging data.
+\end{frame}
+
+
+\begin{frame}
+\frametitle{What is JSON?}
+JSON is recursively from two types of datastructure can be interleaved:
+
+\begin{itemize}
+\item a collection of name value pairs (similar to a Python dictionary), called an \textbf{object}.
+\item a list of values, called an \textbf{array}
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{JSON Object}
+\begin{center}
+\begin{tikzpicture}[node distance=1.5cm,>=stealth',bend angle=45,auto]
+  \tikzset{initial text=$ $,
+              ->}
+  \tikzstyle{literal}=[state,thick,draw=blue!75,fill=blue!20,minimum size=6mm]
+  \tikzstyle{rule}=[rectangle,thick,draw=blue!75,fill=blue!20,minimum size=6mm]
+
+  \tikzstyle{every label}=[red]
+    \node [literal] (lbrack)                                    {\{};
+    \node [state, draw=black, fill=black, minimum size=3mm] (initial) [left of=lbrack] {};
+    \node [rule] (string)  [right of=lbrack]                               {string};
+    \node [literal] (colon) [right of=string] {:};
+    \node [rule] (value) [right of=colon] {value};
+    \node [literal] (rbrack) [right of=value] {\}};
+    \node [literal] (comma) [below of=colon] {,};
+    \node [state, accepting, draw=black, fill=black, minimum size=3mm] (final) [right of=rbrack] {};
+
+   \draw (initial) edge (lbrack)
+            (lbrack) edge (string)
+            (lbrack) edge[bend left, above] (rbrack)
+            (string) edge (colon)
+            (colon) edge (value)
+            (value) edge (rbrack)
+            (rbrack) edge (final)
+            (value) edge[bend left, below] (comma)
+            (comma) edge[bend left, below] (string) ;
+
+\end{tikzpicture}
+\end{center}
+\end{frame}
+
+\begin{frame}
+\frametitle{JSON Array}
+\begin{center}
+\begin{tikzpicture}[node distance=1.5cm,>=stealth',bend angle=45,auto]
+  \tikzset{initial text=$ $,
+              ->}
+  \tikzstyle{literal}=[state,thick,draw=blue!75,fill=blue!20,minimum size=6mm]
+  \tikzstyle{rule}=[rectangle,thick,draw=blue!75,fill=blue!20,minimum size=6mm]
+
+  \tikzstyle{every label}=[red]
+    \node [literal] (lbrack)                                    {[};
+    \node [state, draw=black, fill=black, minimum size=3mm] (initial) [left of=lbrack] {};
+    \node [rule] (value) [right of=lbrack] {value};
+    \node [literal] (rbrack) [right of=value] {]};
+    \node [literal] (comma) [below of=value] {,};
+    \node [state, accepting, draw=black, fill=black, minimum size=3mm] (final) [right of=rbrack] {};
+
+   \draw (initial) edge (lbrack) 
+            (lbrack) edge (value)
+            (lbrack) edge[bend left, above] (rbrack)
+            (value) edge (rbrack)
+            (rbrack) edge (final)
+            (value) edge[bend left, below] (comma)
+            (comma) edge[bend left, below] (value) ;
+
+\end{tikzpicture}
+\end{center}
+\end{frame}
+
+\begin{frame}
+\frametitle{JSON Value}
+\begin{center}
+\scalebox{0.7}{
+\begin{tikzpicture}[node distance=1.3cm,>=stealth',bend angle=45,auto]
+  \tikzset{initial text=$ $,
+              ->}
+  \tikzstyle{literal}=[state,thick,draw=blue!75,fill=blue!20,minimum size=6mm]
+  \tikzstyle{rule}=[rectangle,thick,draw=blue!75,fill=blue!20,minimum size=6mm]
+
+  \tikzstyle{every label}=[red]
+
+    \node [state, draw=black, fill=black, minimum size=3mm] (initial)  {};
+
+    \node [rule] (array) [right of=initial] {array};
+    \node [rule] (object) [above of=array] {object};
+    \node [rule] (number) [above of=object] {number};
+    \node [rule] (string) [above of=number] {string};
+    \node [literal] (true) [below of=array] {true};
+    \node [literal] (false) [below of=true] {false};
+    \node [literal] (null) [below of=false] {null};
+    \node [state, accepting, draw=black, fill=black, minimum size=3mm] (final) [right of=rbrack] {};
+
+   \draw (initial) edge  [bend left, above]  (string)
+            (initial) edge   [bend left, above]  (number)
+            (initial) edge [bend left, above] (object)
+            (initial) edge (array)
+            (initial) edge [bend right] (true)
+            (initial) edge [bend right] (false)
+            (initial) edge [bend right] (null)
+            (string) edge [bend left] (final)
+            (number) edge [bend left] (final)
+            (object) edge [bend left] (final)
+            (array) edge  (final)
+            (true) edge [bend right] (final)
+            (false) edge [bend right] (final)
+             (null) edge [bend right] (final);
+
+\end{tikzpicture}
+}
+\end{center}
+\end{frame}
+
+\begin{frame}
+\frametitle{JSON String}
+We will use a heavily simplified version of the string for now.
+\begin{center}
+\begin{tikzpicture}[node distance=2cm,>=stealth',bend angle=45,auto]
+  \tikzset{initial text=$ $,
+              ->}
+  \tikzstyle{literal}=[state,thick,draw=blue!75,fill=blue!20,minimum size=6mm]
+  \tikzstyle{rule}=[rectangle,thick,draw=blue!75,fill=blue!20,minimum size=6mm]
+
+  \tikzstyle{every label}=[red]
+
+    \node [state, draw=black, fill=black, minimum size=3mm] (initial)  {};
+
+    \node [literal] (leftquote) [right of=initial] {"};
+    \node [rule] (alphanum) [right of=leftquote] {alphanum};
+    \node [literal] (rightquote) [right of=alphanum] {"};
+   \node [state, accepting, draw=black, fill=black, minimum size=3mm] (final) [right of=rightquote] {};
+
+   \draw (initial) edge  (leftquote)
+            (leftquote) edge (alphanum)
+            (alphanum) edge (rightquote)
+            (rightquote) edge (final)
+            (alphanum) edge [loop above] (alphanum);
+
+\end{tikzpicture}
+\end{center}
+\end{frame}
+
+
+\begin{frame}
+\frametitle{JSON Number}
+We also use a heavily simplified version of the number.
+\begin{center}
+\begin{tikzpicture}[node distance=1.4cm,>=stealth',bend angle=45,auto]
+  \tikzset{initial text=$ $,
+              ->}
+  \tikzstyle{literal}=[state,thick,draw=blue!75,fill=blue!20,minimum size=6mm]
+  \tikzstyle{rule}=[rectangle,thick,draw=blue!75,fill=blue!20,minimum size=6mm]
+
+  \tikzstyle{every label}=[red]
+
+    \node [state, draw=black, fill=black, minimum size=3mm] (initial)  {};
+
+    \node [literal] (minus) [below of=initial] {-};
+    \node [rule] (onetonine) [right of=initial] {digit 1-9};
+    \node [literal] (zero) [above of=initial] {0};
+    \node [literal] (dot) [right of=onetonine] {.};
+    \node [rule] (digit1) [below of=onetonine] {digit};
+    \node [rule] (digit2) [right of=dot] {digit};
+    \node [state, accepting, draw=black, fill=black, minimum size=3mm] (final) [right of=digit2] {};
+
+   \draw (initial) edge (zero)
+            (initial) edge (onetonine)
+            (initial) edge (minus)
+            (minus) edge (onetonine)
+            (onetonine) edge (digit1)
+            (digit1) edge [loop below] (digitone)
+            (zero) edge [bend left] (final)
+            (zero) edge [bend left] (dot)
+            (onetonine) edge (dot)
+            (dot) edge (digit2)
+            (digit2) edge (final)
+            (digit1) edge [bend right] (dot)
+            (digit1) edge [bend right] (final)
+            (digit2) edge [loop above] (digit2);
+
+\end{tikzpicture}
+\end{center}
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Exercise 2 Create a JSON Parser: Task 1}
+Create a parser for JSON \textbf{strings} using the following grammar:
+\medskip
+\begin{grammar}
+<string> ::= "<alphanum>"
+\end{grammar}
+
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Exercise 2 Create a JSON Parser: Task 2}
+Create a parser for JSON \textbf{numbers} using the following grammar:
+\medskip
+\begin{grammar}
+<number> ::= <int> <frac>
+
+<int> ::=  <digit> | <onenine> <digits> | - <digit> | - <onenine><digits>
+
+<frac> ::= "" | . <digits>
+
+<digits> ::= <digit> | <digit> <digits>
+
+<digit> ::= 0 | <onenine>
+
+<onenine> ::= 1-9
+\end{grammar}
+
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Exercise 2 Create a JSON Parser: Task 3}
+Create a parser for JSON \textbf{values} using the following grammar:
+\medskip
+\begin{grammar}
+<value> ::= <object> | <array> | <string> | <number> | true | false | null
+\end{grammar}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Exercise 2 Create a JSON Parser: Task 4}
+Create a parser for JSON \textbf{arrays} using the following grammar:
+\medskip
+\begin{grammar}
+<array> ::= [] | [ <values> ]
+
+<values> ::= <value> | <value> , <values>
+\end{grammar}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Exercise 2 Create a JSON Parser: Task 5}
+Create a parser for JSON \textbf{objects} using the following grammar:
+\medskip
+\begin{grammar}
+<object> ::= \{ \} | \{ <members> \}
+
+<members> ::= <member> | <member> , <members>
+
+<member> ::= <string> : <value>
+\end{grammar}
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Dealing with Whitespace}
+By default Pyparsing parsers automatically consume whitespace. \\
+\medskip
+It is possible to change this by using the \texttt{setDefaultWhitespaceChars} method e.g. \\
+\medskip
+\begin{verbatim}
+ParserElement.setDefaultWhitespaceChars("\t")
+\end{verbatim}
+\bigskip
+See example \textbf{whitespace.py}.
+
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Exercise 2 Create a JSON Parser: Task 6}
+Extend the
+\end{frame}
+
+
+
+
 
 \end{document}
 
-\begin{frame}
-\frametitle{Structuring a Simple Application}
 
-\end{frame}
-
-
-
-\begin{frame}
-\frametitle{Exercise 1: Date time format string}
-
-\end{frame}
 
 \begin{frame}
 \frametitle{Intermediate Pyparsing}
 
 \end{frame}
 
-\begin{frame}
-\frametitle{Structuring parser results using Group, Combine and setName}
-\end{frame}
-
-\begin{frame}
-\frametitle{Adding extra behaviour with setParseAction}
-\end{frame}
-
-
-\begin{frame}
-\frametitle{Forward declaring parsers with Forward}
-\end{frame}
 
 
 \begin{frame}
@@ -724,83 +1332,5 @@ The \texttt{Or} parse expression, written infix as \texttt{\^}, requires that at
 \frametitle{Summary}
 \end{frame}
 
-
-\end{document}
-\begin{frame}
-\frametitle{References}    
- 
-%Specification Implementation Verification Method:
-
-  \begin{thebibliography}{10}    
-  \beamertemplatearticlebibitems
-  \bibitem{} James, P., Lawrence, A.,  Moller, F., Roggenbach, M., Seisenberger, M. and Setzer, A.Chadwick, S. ,P. Kanso, K., :
-\newblock{\em  Verification of solid state interlocking programs.}
-\newblock In SEFM'13, LNCS 8368, Springer 2014.
-\end{thebibliography} 
-
-\bigskip
-%Extraction of SAT and Resolution algorithm:
-
-\begin{thebibliography}{10}    
-  \beamertemplatearticlebibitems
-  \bibitem{}
-    Berger, U.,  Lawrence, A., Nordvall Forsberg, F. , Seisenberger, M. 
-    \newblock {\em Extraction of Verified Decision Procedures}. LMCS, to appear. 
-
-\bigskip
-
-\bibitem{} Lawrence, A, Berger, U. , James, P., Roggenbach, M., Seisenberger, M.
-\newblock {\em Modelling and Analysing the European Rail Traffic Control System}
-\newblock FTSCS, 2014.
-
-\end{thebibliography}
-\end{frame}
-
-
-
-\end{document}
-
-\begin{frame}
-
-\frametitle{European Rail Traffic Management System (ERTMS) II}
-
-Formal methods and ERTMS:
-\begin{itemize}
-
-\item
-EuRailCheck (2009): \\ suggested methodology and tools for
-formalization and validation of the standard.
-
-\item
-Open ETCS Project (ongoing): \\ works towards an integrated framework for
-modelling, development, implementation and testing of the standard.
-
-\end{itemize}
-
-Open research questions include:
-\begin{enumerate}
-
-\item
-How can safety be verified? 
-
-\item
-How can capacity be measured and improved?
-
-\item
-How can reliability be measured and estimated?
-
-\end{enumerate}
-
-Here: 1 and, partially, 2.
-
-\end{frame}
-
-\section{Modelling and Analyzing ERTMS}
-
-%\begin{frame}
-%\begin{center}
-%{\Large ERTMS -- how it works}
-%\end{center}
-%\end{frame}
 
 \end{document}

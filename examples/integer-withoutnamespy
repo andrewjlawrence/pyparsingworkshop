@@ -1,0 +1,12 @@
+
+import pyparsing as pp
+
+unsignedint = pp.Word(pp.nums)
+integer =  pp.Combine(pp.Literal("-") + unsignedint) \
+           | unsignedint
+
+integer.runTests("""
+        1
+        -1
+""")
+
