@@ -90,3 +90,16 @@ array.runTests("""
     [ \" meh \" , 1.0 , true , false , null ]
     []
 """)
+
+LEFT_CBRACK = pp.Suppress("{")
+RIGHT_CBRACK = pp.Suppress("}")
+member = pp.Group(string + pp.Suppress(":") + value)
+members = pp.ZeroOrMore(member)
+jobject = LEFT_CBRACK +  pp.Dict(members) + RIGHT_CBRACK
+
+jobject.runTests( """
+    {\" meh \" : null}
+"""
+)
+
+print(jobject.parseString("{\" meh \" : null}").asDict())
