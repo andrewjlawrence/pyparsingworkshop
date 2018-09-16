@@ -71,3 +71,6 @@ integer.runTests("""
         -1
 """)
 
+
+sum.setFailAction(lambda t: "Sum Failed")
+print(sum.parseString("* abc123"))

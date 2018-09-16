@@ -1,26 +1,12 @@
 \documentclass{beamer}
 \mode<presentation>
  \usetheme{CambridgeUS}
-%\usepackage{bussproofs}
-%\usetheme{Singapore}
-%\usecolortheme{lily}
-  %%\usetheme{Logictheme} %nothing else
-  %\setbeamertemplate{footline}[frame number]
-  
-%%\usepackage{bussproofs}
-%%\usepackage[latin1]{inputenc} 
-%%\newcommand{\mypause}{}
-%%\newcommand{\mypause}{\pause}
 
 
-%\institute[Madrid]{Swansea Railway Verification Group, Critical Software Technologies, Invensys Rail\\ \quad}
-%\title[Logic in Railway Verification]{Application of Logic to the Verification\\ of Railway Control Systems}
-%\title[Surrey Workshop]{Modelling and Analyzing the European Rail Traffic Management %System (ERTMS)}
 \title[Pythonic Parsing with Pyparsing]{Pythonic Parsing with Pyparsing}
 
-\author[Andrew Lawrence]{Andrew Lawrence}
+\author[Dr Andrew Lawrence]{Dr Andrew Lawrence}
 \date[PyCon UK, 17 September 2018]{PyCon UK 2018\\[1em]  Cardiff, 17 September 2018}
-%\institute[Swansea University]{Joint work with Andrew Lawrence, Ulrich Berger,  Phil James, Markus Roggenbach}
 
 \usepackage{tikz}
 \usepackage{graphicx}
@@ -45,6 +31,10 @@
 \definecolor{bottomcol}{RGB}{222,222,222}
 
 
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\newcommand*{\escape}[1]{\texttt{\textbackslash#1}}
+
 \begin{document}
 \tikzstyle{class}=[
     rectangle,
@@ -61,7 +51,18 @@
   \titlepage
 \end{frame}
 
-
+\begin{frame}
+\frametitle{Who Am I?}
+\begin{itemize}
+\item Software Engineer
+\pause
+\item Previously, I did a PhD looking at automatic formal verification of train control systems
+\pause
+\item First Pycon
+\pause
+\item First workshop
+\end{itemize}
+\end{frame}
 
 \begin{frame}
 
@@ -83,7 +84,6 @@ Overview:
   \item \underline{Part V:} Exercise 2: JSON Parser
   \item \underline{Part VI:} Advanced Pyparsing
 \end{itemize}
-
 \end{frame}
 
 \begin{frame}
@@ -119,9 +119,32 @@ You also need to install Pyparsing.
 
 \begin{frame}
 \frametitle{Why do we need parsers?}
-The world is full of textual data in human readable formats. \\
+The world is full of textual data in structured human readable formats. \\
+\begin{itemize}
+\item XML
+\item JSON
+\item other propriety formats...
+\end{itemize}
 \bigskip
 The problem here is getting computers to understand this data.
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Why do we need parsers?}
+\begin{verbatim}
+  <customer id="cust0921">
+    <first-name>Andrew</first-name>
+    <last-name>Lawrence</last-name>
+    <address>
+      <street>Langley Park</street>
+      <city>Chippenham</city>
+      <county>Wiltshire</county>
+      <postcode>SN122BL</postcode>
+    </address>
+  </customer>
+\end{verbatim}
+
+
 \end{frame}
 
 \begin{frame}
@@ -164,7 +187,9 @@ Typically parsing involves 3 stages:
 \begin{frame}
 \frametitle{What is a Grammar?}
 
-A \textbf{grammar} is a set of rules that describes the structure of text.
+A \textbf{grammar} is a set of rules that describes the structure of text. \\
+\bigskip
+It specifies the syntax that should be accepted by the parser.
 \end{frame}
 
 
@@ -179,8 +204,7 @@ A Backus-Naur form (BNF) is metasyntax notation for describing grammars.
     $<\mathrm{non terminals}>$ & non terminal symbols  \\ \hline
     \textbf{terminals} & terminal symbols  \\ \hline
     $|$ & choice  \\ \hline
-    ::= & replaced-by  \\ \hline
-    * & repetition \\
+    ::= & replaced-by  \\ 
     \hline
   \end{tabular}
 \end{center}
@@ -450,25 +474,49 @@ Why are regular expressions bad?
 \frametitle{Pyparsing Overview}
 Pyparsing is a recursive decent parser framework for the Python programming language. \\
 \medskip
-Created by Paul McGuire in 2003.
+Created by Paul McGuire in 2003. \\
 \medskip
-Follows the parser combinator approach to parsing. You build your parser by combining other parsers.
+Follows the parser combinator approach to parsing.
 \end{frame}
 
+\begin{frame}
+\frametitle{Parser Combinator Approach}
+You build your parser by combining other parsers.
+$$Parser_3 = Parser_1 + Parser_2$$
+\end{frame}
 
 \begin{frame}
 \frametitle{Pyparsing Advantages}
-Pyparsing is a recursive decent parser framework for the Python programming language. \\
+
+\textbf{\underline{Comprehensive framework}} - Contains many predefined parsers. \\
+\medskip
+\textbf{\underline{Powerful}} - More so than regular expressions (Parsing expression grammar vs regular grammar).\\
 \bigskip
-More powerful than regular expressions.\\
-\bigskip
-Lets us define parsers using a BNF style notation
+\textbf{\underline{High-level}} - Lets us define parsers using a BNF style notation.
 \end{frame}
 
+\begin{frame}
+\frametitle{Chomsky Hierarchy}
+Noam Chomsky did a lot of foundational research in formal language theory in the 1950s
+
+$$REG \subset CF \subset CS \subset RE$$
+
+\underline{\textbf{REG} Regular languages} - those defined by regular expression \\ \medskip
+\underline{\textbf{CF} Context-free languages} - no context in the syntactic rules \\ \medskip
+\underline{\textbf{CS} Context-sensitive languages} - can have context in syntactic rules \\ \medskip
+\underline{\textbf{RE} Recursively enumerable languages} - all languages that can be parsed on a computer
+\end{frame}
+
+\begin{frame}
+\frametitle{Parsing Expression Grammar}
+Pyparsing utilizes \textit{Parsing Expression Grammars} which have been around since 2004. \\
+\medskip
+Very similar to context-free languages but the choice operator $|$ is deterministic.
+\end{frame}
 
 \begin{frame}
 \frametitle{Pyparsing is Pythonic}
-Pyparsing is pythonic. Consider the below points from "The Zen of Python": \\
+Consider the below points from "The Zen of Python": \\
 \bigskip
 \begin{itemize}
 \item Beautiful is better than ugly.
@@ -479,8 +527,27 @@ Pyparsing is pythonic. Consider the below points from "The Zen of Python": \\
 \end{frame}
 
 \begin{frame}
+\frametitle{The Zen of Pyparsing (by Paul McGuire) Part 1}
+Don't clutter up the parser grammar with whitespace, just handle it! (likewise for comments) \\
+\bigskip
+Grammars must tolerate change, as grammar evolves or input text becomes more challenging. \\
+\bigskip
+Grammars do not have to be exhaustive to be useful. 
+\end{frame}
+
+\begin{frame}
+\frametitle{The Zen of Pyparsing (by Paul McGuire) Part 2}
+Simple grammars can return lists; complex grammars need named results. \\
+\bigskip
+Class names are easier to read and understand than specialized typography. \\
+\bigskip
+Parsers can (and sometimes should) do more than tokenize.
+\end{frame}
+
+
+\begin{frame}
 \frametitle{Arthmetic Example in Pyparsing}
-Show arthmetic example
+See arthmetic example \textbf{sum.py}
 \end{frame}
 
 
@@ -489,6 +556,11 @@ Show arthmetic example
 Loading the module inside a Python script can be done like so
 \begin{verbatim}
 import pyparsing as pp
+\end{verbatim}
+\bigskip
+You can then define some parser and call either parseString or scanString.
+\begin{verbatim}
+myparser.parseString("Somestring")
 \end{verbatim}
 \end{frame}
 
@@ -504,10 +576,6 @@ The basic building block from which all other parsers are built
 }
 \umlVHVinherit{ParserElement}{object} 
 \end{tikzpicture}
-%     	parseString(self, instring) : ParseResults
-%}
-%        setParseAction(self, *fns, **kwargs)  \\
- %       runTests(self, tests, ...) }
 \end{center}
 \end{frame}
 
@@ -554,13 +622,14 @@ It is always advisable to write unit tests for real application development.
 \umlsimpleclass{object} 
 \umlsimpleclass[y=-2]{ParserElement}
 \umlsimpleclass[y=-4]{Token}
-\umlsimpleclass[x=-2, y=-6 ]{Literal}
-\umlsimpleclass[x=2, y=-6 ]{Word}
+\umlsimpleclass[x=-3, y=-6 ]{Literal}
+\umlsimpleclass[x=0, y=-6 ]{Word}
+\umlsimpleclass[x=3, y=-6 ]{Keyword}
 \umlVHVinherit{ParserElement}{object} 
 \umlVHVinherit{Token}{ParserElement} 
 \umlVHVinherit{Literal}{Token} 
 \umlVHVinherit{Word}{Token} 
-
+\umlVHVinherit{Keyword}{Token} 
 \end{tikzpicture}
 \end{center}
 \end{frame}
@@ -630,14 +699,35 @@ unsignedint.parseString("123")
 unsignedint.parseString("abc")
 # => pyparsing.ParseException: Expected W:(0123...)	
 \end{verbatim}
+See example \textbf{integer-withoutnames.py}
 \end{frame}
 
 \begin{frame}
 \frametitle{Pyparsing Basics: Word Length}
 Word has some helpful parameters for lengths.
 
+\begin{description}
+\item[exact] Match with exactly this length
+\item[max] Match with a maximum length
+\item[min] Match with a minimum length
+\end{description}
+\bigskip
 
+See example \textbf{digit.py}
+\end{frame}
 
+\begin{frame}[fragile]
+\frametitle{Pyparsing Basics: ParseResults}
+\begin{center}
+\begin{tikzpicture}[post/.style={->,shorten >=1pt,>=stealth',semithick}] 
+\umlsimpleclass{object} 
+\umlclass[y=-3]{ParseResults}{}{asList()  \\
+	asDict() \\
+        getName()
+}
+\umlVHVinherit{ParserElement}{object} 
+\end{tikzpicture}
+\end{center}
 \end{frame}
 
 
@@ -656,14 +746,23 @@ unsignedint.runTests("""
 ['1']
 - Unsigned Integer: '1'
 \end{verbatim}
+See example \textbf{integer-withnames-v1.py}
 \end{frame}
 
 
-\begin{frame}
+\begin{frame}[fragile]
 \frametitle{Pyparsing Basics: Keyword}
-Todo describe keyword
+The Keyword parser can be used to match works that must be seperated by white space.
+\begin{verbatim}
+print(pp.Keyword("if").parseString("if (1 + 1 = 2)"))
+=>
+	["if"]
+print(pp.Keyword("if").parseString("ifAndOnlyIf"))
+=>
+ 	ParseException
+\end{verbatim}
+See example \textbf{ifstatement.py}
 \end{frame}
-
 
 
 \begin{frame}
@@ -720,7 +819,10 @@ name_attr = "name:" + name("pet name")
 
 pet_spec = name_attr & type_attr
 \end{verbatim}
+See example \textbf{animals-each.py}
 \end{frame}
+
+
 
 \begin{frame}[fragile]
 \frametitle{Pyparsing Basics: Each}
@@ -742,7 +844,6 @@ type: CAT name: Tom
 \end{verbatim}
 \end{frame}
 
-
 \begin{frame}[fragile]
 \frametitle{Pyparsing Basics: MatchFirst}
 The \texttt{MatchFirst} parse expression, written infix as \texttt{|}, requires that one of the ParseExpressions are matched with priority given from left to right.
@@ -754,9 +855,8 @@ integer =
     ).setResultsName("integer") | 
         unsignedint("unsigned integer")
 \end{verbatim} 
+See example \textbf{integer-withnames-v2.py}
 \end{frame}
-
-
 
 
 \begin{frame}[fragile]
@@ -788,19 +888,6 @@ number.searchString("123 3.1416 789"))
          =>
     [['123'], ['3.1416'], ['789']]
 \end{verbatim}
-\end{frame}
-
-\begin{frame}[fragile]
-\frametitle{Pyparsing Basics: Combine}
-The \texttt{Combine} parse expression combines parsed tokens into a single string.
-
-\begin{verbatim}
-number = Word(nums) ^ Combine(Word(nums) + '.' + Word(nums))
-number.searchString("123 3.1416 789"))
-    =>
-[['123'], ['3.1416'], ['789']]
-\end{verbatim}
-Combine is actually enhancing the parser rather than chaning the grammar to be parsed.
 \end{frame}
 
 
@@ -846,31 +933,7 @@ sum = pp.Forward()
 sum_list = product + pp.Literal("+") + sum
 sum << (sum_list | product)
 \end{verbatim}
-\end{frame}
-
-
-\begin{frame}
-\frametitle{Pyparsing Basics: Token Converters}
-Token converters are used to convert parsed results
-\begin{center}
-\begin{tikzpicture}[post/.style={->,shorten >=1pt,>=stealth',semithick}] 
-\umlsimpleclass{ParseElementEnhance} 
-\umlsimpleclass[y=-2]{TokenConverter}
-\umlsimpleclass[x=-4,y=-4]{Combine}
-\umlsimpleclass[x=-1.5, y=-4]{Dict}
-\umlsimpleclass[x=1.5,y=-4]{Group}
-\umlsimpleclass[x=4, y=-4]{Suppress}
-
-%\umlVHVinherit{ParserElement}{object} 
-\umlVHVinherit{TokenConverter}{ParseElementEnhance} 
-\umlVHVinherit{Combine}{TokenConverter} 
-\umlVHVinherit{Dict}{TokenConverter} 
-\umlVHVinherit{Group}{TokenConverter} 
-\umlVHVinherit{Suppress}{TokenConverter} 
-
-\end{tikzpicture}
-\end{center}
-
+See example \textbf{sum.py}
 \end{frame}
 
 
@@ -931,8 +994,51 @@ One possible answer
 \end{frame}
 
 
+
+\section{Pyparsing Intermediate}
+
 \begin{frame}
-\frametitle{Pyparsing Basics: Suppress}
+\frametitle{Pyparsing Basics: Token Converters}
+Token converters are used to convert parsed results
+\begin{center}
+\begin{tikzpicture}[post/.style={->,shorten >=1pt,>=stealth',semithick}] 
+\umlsimpleclass{ParseElementEnhance} 
+\umlsimpleclass[y=-2]{TokenConverter}
+\umlsimpleclass[x=-4,y=-4]{Combine}
+\umlsimpleclass[x=-1.5, y=-4]{Dict}
+\umlsimpleclass[x=1.5,y=-4]{Group}
+\umlsimpleclass[x=4, y=-4]{Suppress}
+
+%\umlVHVinherit{ParserElement}{object} 
+\umlVHVinherit{TokenConverter}{ParseElementEnhance} 
+\umlVHVinherit{Combine}{TokenConverter} 
+\umlVHVinherit{Dict}{TokenConverter} 
+\umlVHVinherit{Group}{TokenConverter} 
+\umlVHVinherit{Suppress}{TokenConverter} 
+
+\end{tikzpicture}
+\end{center}
+
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Intermediate Pyparsing: Combine}
+The \texttt{Combine} parse expression combines parsed tokens into a single string.
+
+\begin{verbatim}
+number = Word(nums) ^ Combine(Word(nums) + '.' + Word(nums))
+number.searchString("123 3.1416 789"))
+    =>
+[['123'], ['3.1416'], ['789']]
+\end{verbatim}
+Combine is actually enhancing the parser rather than chaining the grammar to be parsed.
+\end{frame}
+
+
+
+\begin{frame}
+\frametitle{Intermediate Pyparsing: Suppress}
 Suppress is a TokenConverter that throws away the parsed results
 \begin{center}
 \begin{tikzpicture}[post/.style={->,shorten >=1pt,>=stealth',semithick}] 
@@ -947,10 +1053,8 @@ Suppress is a TokenConverter that throws away the parsed results
 
 \end{frame}
 
-\section{Pyparsing Intermediate}
-
 \begin{frame}[fragile]
-\frametitle{Pyparsing Basics: Suppress}
+\frametitle{Intermediate Pyparsing: Suppress}
 There are two ways to apply Suppress:
 \begin{verbatim}
 animal_type = pp.oneOf("CAT DOG HORSE FISH RAT")
@@ -961,10 +1065,8 @@ name_attr = pp.Literal("name:").suppress() + name("pet name")
 
 pet_spec = name_attr & type_attr
 \end{verbatim}
-\end{frame}
-
-\begin{frame}
-TODO add more about token converters.
+\medskip
+See example \textbf{animals-suppress.py}
 \end{frame}
 
 
@@ -974,23 +1076,94 @@ TODO add more about token converters.
 \end{frame}
 
 
-
-
-
 \begin{frame}
-\frametitle{Adding Behavior to Parsers}
-Parser Element lets us add additional parsing behavior with the \texttt{setParseAction} method.
-\medskip
+\frametitle{Intermediate Pyparsing: Group}
+It is possible to group results together into a list using the \texttt{Group} token converter. \\
+\bigskip
+See example \textbf{group.py}
+\end{frame}
 
-See example \textbf{sum-version2.py}.
+\begin{frame}[fragile]
+\frametitle{Intermediate Pyparsing: Repetition}
+There are two parser enhancements to handle repetition. 
+\begin{center}
+\begin{tikzpicture}[post/.style={->,shorten >=1pt,>=stealth',semithick}] 
+\umlsimpleclass{ParseElementEnhance} 
+\umlsimpleclass[y=-2]{MultipleMatch}
+\umlsimpleclass[x=-2,y=-4]{ZeroOrMore}
+\umlsimpleclass[x=2,y=-4]{OneOrMore}
 
+\umlVHVinherit{MultipleMatch}{ParseElementEnhance} 
+\umlVHVinherit{ZeroOrMore}{MultipleMatch} 
+\umlVHVinherit{OneOrMore}{MultipleMatch} 
+\end{tikzpicture}
+\end{center}
+\texttt{OneOrMore} was in the \textbf{group.py} example.
 \end{frame}
 
 \begin{frame}
+\frametitle{Intermediate Pyparsing: Adding Behavior to Parsers}
+Parser Element lets us add additional parsing behavior with the \texttt{setParseAction}  method. \\ 
+\medskip
+See example \textbf{sum-version2.py}.
+
+\end{frame}
+ 
+
+
+\begin{frame}
+We can also override the default failure behaviour with \texttt{setFailureAction} with a function \texttt{fn(s,loc,expr,err)}. \\
+\begin{description}
+\item[s] The string currently being parsed
+\item[loc] The location where the failure occured
+\item[expr] The parse expression that failed
+\item[err] The exception thrown.
+\end{description}
+\medskip
+See example \textbf{sum-version2.py}.
+\end{frame}
+
+
+\begin{frame}
 \frametitle{Exercise 1: Dice Rolling Task 4}
-\textbf{\underline{Task 4}} Add a parse action to your dice roll parser that does a dice roll. 
+\textbf{\underline{Task 4}} Add a parse action to your dice roll parser that does a dice roll. \\
 \medskip
 You may need to import the \texttt{random} module to do this.
+\end{frame}
+
+\begin{frame}
+\frametitle{Intermediate Pyparsing: Dict}
+The \texttt{Dict} token converter lets us convert tokens into Python dictionaries. \\
+\bigskip
+See \textbf{dictionaries.py}
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Infix notation}
+Remember we defined a grammar for arithmetic expressions earlier...
+\begin{verbatim}
+sum = pp.infixNotation(pp.Word(pp.nums), [
+     ("-", 1, pp.opAssoc.RIGHT),
+     ("*", 2, pp.opAssoc.LEFT),
+     ("+", 2, pp.opAssoc.LEFT),
+    ])
+\end{verbatim}
+See example \textbf{sum-version3.py}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Intermediate Pyparsing: Delimited lists}
+We can handle delimited lists using the \texttt{delimitedList} helper function. \\
+\begin{verbatim}
+pp.delimitedList(pp.Word(pp.nums), ',').parseString("1,2,3")
+=>
+['1', '2', '3']
+\end{verbatim}
+
+\bigskip
+See example \textbf{delimitedlist.py}
+
 \end{frame}
 
 \begin{frame}
@@ -1001,7 +1174,7 @@ This is a commonly used format for exchanging data.
 \end{frame}
 
 
-\begin{frame}
+\begin{frame}[fragile]
 \frametitle{What is JSON?}
 JSON is recursively from two types of datastructure can be interleaved:
 
@@ -1009,6 +1182,11 @@ JSON is recursively from two types of datastructure can be interleaved:
 \item a collection of name value pairs (similar to a Python dictionary), called an \textbf{object}.
 \item a list of values, called an \textbf{array}
 \end{itemize}
+\bigskip
+Example below
+\begin{verbatim}
+{ name: "John", age: 31, city: "New York" }
+\end{verbatim}
 
 \end{frame}
 
@@ -1241,6 +1419,7 @@ Create a parser for JSON \textbf{arrays} using the following grammar:
 \end{grammar}
 \end{frame}
 
+
 \begin{frame}[fragile]
 \frametitle{Exercise 2 Create a JSON Parser: Task 5}
 Create a parser for JSON \textbf{objects} using the following grammar:
@@ -1272,15 +1451,44 @@ See example \textbf{whitespace.py}.
 
 \begin{frame}[fragile]
 \frametitle{Exercise 2 Create a JSON Parser: Task 6}
-Extend the
+Extend our JSON string parser to deal with escaped characters \escape{t} and \escape{n}.
 \end{frame}
 
 
+\begin{frame}
+\frametitle{Packrat Parsing}
+An optimization technique for parsers. 
+
+\begin{verbatim}
+
+\end{verbatim}
+
+Disabled by default.
+\end{frame}
 
 
+\begin{frame}
+\frametitle{Packrat Parsing}
+How does this work? It uses a technique called \textbf{memoization} or \textbf{tabling}
+
+\begin{verbatim}
+
+\end{verbatim}
+
+Disabled by default.
+\end{frame}
+
+\begin{frame}
+\frametitle{Tracing Parsers}
+\end{frame}
+
+\begin{frame}
+\begin{center}
+Thats the end of the workshop. Thanks for listening.
+\end{center}
+\end{frame}
 
 \end{document}
-
 
 
 \begin{frame}
@@ -1324,8 +1532,25 @@ Extend the
 
 \begin{frame}
 \frametitle{Packrat Parsing}
+An optimization technique for parsers. 
+
+\begin{verbatim}
+
+\end{verbatim}
+
+Disabled by default.
 \end{frame}
 
+\begin{frame}
+\frametitle{Packrat Parsing}
+An optimization technique for parsers. 
+
+\begin{verbatim}
+
+\end{verbatim}
+
+Disabled by default.
+\end{frame}
 
 
 \begin{frame}
