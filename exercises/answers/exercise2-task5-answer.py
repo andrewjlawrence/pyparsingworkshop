@@ -81,9 +81,9 @@ value.runTests("""
     \"meh\"
 """)
 
-LEFT_SBRACK = pp.Suppress("[")
-RIGHT_SBRACK = pp.Suppress("]")
-array << (pp.Group(LEFT_SBRACK + pp.delimitedList(value) + RIGHT_SBRACK) | pp.Group(LEFT_SBRACK + RIGHT_SBRACK))
+left_sbrack = pp.Suppress("[")
+right_sbrack = pp.Suppress("]")
+array << (pp.Group(left_sbrack + pp.delimitedList(value) + right_sbrack) | pp.Group(left_sbrack + right_sbrack))
 array.setResultsName("array")
 
 array.runTests("""
@@ -91,14 +91,15 @@ array.runTests("""
     []
 """)
 
-LEFT_CBRACK = pp.Suppress("{")
-RIGHT_CBRACK = pp.Suppress("}")
+left_cbrace = pp.Suppress("{")
+right_cbrace = pp.Suppress("}")
 member = pp.Group(string + pp.Suppress(":") + value)
 members = pp.ZeroOrMore(member)
-jobject = LEFT_CBRACK +  pp.Dict(members) + RIGHT_CBRACK
+jobject = left_cbrace +  pp.Dict(members) + right_cbrace
 
 jobject.runTests( """
-    {\" meh \" : null}
+    {\" string \" : null}
+    {\" stringa \" : [\" stringb \", \" stringc \"]}
 """
 )
 

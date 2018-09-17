@@ -482,7 +482,7 @@ Follows the parser combinator approach to parsing.
 \begin{frame}
 \frametitle{Parser Combinator Approach}
 You build your parser by combining other parsers.
-$$Parser_3 = Parser_1 + Parser_2$$
+$$Parser_A = Parser_B + Parser_C$$
 \end{frame}
 
 \begin{frame}
@@ -888,6 +888,7 @@ number.searchString("123 3.1416 789"))
          =>
     [['123'], ['3.1416'], ['789']]
 \end{verbatim}
+See example \textbf{numberor.py}
 \end{frame}
 
 
@@ -1032,7 +1033,9 @@ number.searchString("123 3.1416 789"))
     =>
 [['123'], ['3.1416'], ['789']]
 \end{verbatim}
-Combine is actually enhancing the parser rather than chaining the grammar to be parsed.
+Combine is actually enhancing the parser rather than chaining the grammar to be parsed. \\
+\medskip
+See example \textbf{numberor.py}
 \end{frame}
 
 
@@ -1109,10 +1112,9 @@ See example \textbf{sum-version2.py}.
 
 \end{frame}
  
-
-
 \begin{frame}
-We can also override the default failure behaviour with \texttt{setFailureAction} with a function \texttt{fn(s,loc,expr,err)}. \\
+\frametitle{setFailureAction}
+We can also add additional failure behaviour with \texttt{setFailureAction} with a function \texttt{fn(s,loc,expr,err)}. \\
 \begin{description}
 \item[s] The string currently being parsed
 \item[loc] The location where the failure occured
@@ -1455,7 +1457,7 @@ Extend our JSON string parser to deal with escaped characters \escape{t} and \es
 \end{frame}
 
 
-\begin{frame}
+\begin{frame}[fragile]
 \frametitle{Packrat Parsing}
 An optimization technique for parsers. 
 
@@ -1467,15 +1469,11 @@ Disabled by default.
 \end{frame}
 
 
-\begin{frame}
+\begin{frame}[fragile]
 \frametitle{Packrat Parsing}
 How does this work? It uses a technique called \textbf{memoization} or \textbf{tabling}
 
-\begin{verbatim}
 
-\end{verbatim}
-
-Disabled by default.
 \end{frame}
 
 \begin{frame}

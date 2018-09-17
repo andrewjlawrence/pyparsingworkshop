@@ -1,14 +1,18 @@
 #
 # JSON Parser exercise
 #
-
 import pyparsing as pp
+pp.ParserElement.setDefaultWhitespaceChars(' ')
 
-string = pp.Literal("\"").suppress() + pp.Word(pp.alphanums) + pp.Literal("\"").suppress()
+escapechar = (pp.Literal("\\t") | pp.Literal("\\n"))
+characters = (pp.Word(pp.alphanums) | escapechar | pp.White(' '))
 
-string.runTests("""
-        \"meh\"
-""")
+string = pp.Literal("\"").suppress() + pp.Combine(pp.OneOrMore(characters)) + pp.Literal("\"").suppress()
+
+print(string.parseString("\"meh \\t \""))
+
+string.runTests("\"meh \\t \"")
+
 
 #
 # It is also possible to use the quoted string class
@@ -90,3 +94,17 @@ array.runTests("""
     [ \" meh \" , 1.0 , true , false , null ]
     []
 """)
+
+left_cbrace = pp.Suppress("{")
+right_cbrace = pp.Suppress("}")
+member = pp.Group(string + pp.Suppress(":") + value)
+members = pp.ZeroOrMore(member)
+jobject = left_cbrace +  pp.Dict(members) + right_cbrace
+
+jobject.runTests( """
+    {\" string \" : null}
+    {\" stringa  \" : [\" stringb \", \" stringc \"]}
+"""
+)
+print(jobject.parseString("{\" stringa \\n \" : [\" stringb \", \" stringc \"]}"))
+print(jobject.parseString("{\" meh \" : null}").asDict())

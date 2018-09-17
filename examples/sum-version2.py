@@ -72,5 +72,5 @@ integer.runTests("""
 """)
 
 
-sum.setFailAction(lambda t: "Sum Failed")
+sum.setFailAction(lambda s,loc,expr,err: print("Sum Failed"))
 print(sum.parseString("* abc123"))
