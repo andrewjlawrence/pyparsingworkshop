@@ -51,7 +51,8 @@ product_list = pp.Group(value + pp.Literal("*").suppress() + product).setParseAc
 product << (product_list | value)
 
 sum = pp.Forward()
-sum_list = pp.Group(product + pp.Literal("+").suppress() + sum).setParseAction(lambda t: Sum(t[0][0], t[0][1]))
+sum_list = pp.Group(product + pp.Literal("+").suppress() \
+                    + sum).setParseAction(lambda t: Sum(t[0][0], t[0][1]))
 sum << (sum_list | product)
 
 
@@ -72,5 +73,5 @@ integer.runTests("""
 """)
 
 
-sum.setFailAction(lambda s,loc,expr,err: print("Sum Failed"))
-print(sum.parseString("* abc123"))
+#sum.setFailAction(lambda s,loc,expr,err: print("Sum Failed"))
+#print(sum.parseString("* abc123"))
