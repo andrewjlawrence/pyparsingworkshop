@@ -58,7 +58,7 @@
 \pause
 \item Previously, I did a PhD looking at automatic formal verification of train control systems
 \pause
-\item First Pycon
+\item First PyCon
 \pause
 \item First workshop
 \end{itemize}
@@ -201,8 +201,8 @@ A Backus-Naur form (BNF) is metasyntax notation for describing grammars.
   \begin{tabular}{ | c | c | }
     \hline
     element type & description \\ \hline\hline
-    $<\mathrm{non terminals}>$ & non terminal symbols  \\ \hline
-    \textbf{terminals} & terminal symbols  \\ \hline
+    $<\mathrm{non terminals}>$ & intermediate labels  \\ \hline
+    \textbf{terminals} & printable characters  \\ \hline
     $|$ & choice  \\ \hline
     ::= & replaced-by  \\ 
     \hline
@@ -1435,6 +1435,7 @@ Create a parser for JSON \textbf{objects} using the following grammar:
 \end{grammar}
 \end{frame}
 
+\section{Advanced Pyparsing}
 
 \begin{frame}[fragile]
 \frametitle{Dealing with Whitespace}
@@ -1459,25 +1460,33 @@ Extend our JSON string parser to deal with escaped characters \escape{t} and \es
 
 \begin{frame}[fragile]
 \frametitle{Packrat Parsing}
-An optimization technique for parsers. 
-
+An optimization technique for parsers. Disabled by default.  \\
+\medskip
 \begin{verbatim}
-
+ParserElement.enablePackrat()
 \end{verbatim}
-
-Disabled by default.
-\end{frame}
-
-
-\begin{frame}[fragile]
-\frametitle{Packrat Parsing}
-How does this work? It uses a technique called \textbf{memoization} or \textbf{tabling}
-
-
+\medskip
+How does this work? It uses a technique called \textbf{memoization} or \textbf{tabling}.
 \end{frame}
 
 \begin{frame}
-\frametitle{Tracing Parsers}
+\frametitle{Debugging}
+You can call \texttt{setDebug} on a parser to enable debug tracing. \\
+\medskip
+See exampe \textbf{integer-debug.py}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Tracing Parse Actions}
+You can decorate parse actions with a tracing function.
+\begin{verbatim}
+@pp.traceParseAction
+def dummyAction(toks):
+     return None
+
+unsignedint = pp.Word(pp.nums).setParseAction(dummyAction)
+\end{verbatim}
+See example \textbf{traceparseaction.py}
 \end{frame}
 
 \begin{frame}
